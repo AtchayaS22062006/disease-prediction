@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Disease Prediction</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h2>Disease Prediction Based on Symptoms</h2>
+        <form method="POST">
+            <label for="symptoms">Enter Symptoms (comma separated):</label>
+            <input type="text" id="symptoms" name="symptoms" placeholder="e.g. Itching, Skin Rash" required>
+            <button type="submit">Predict Disease</button>
+        </form>
+
+        {% if predictions %}
+            <h3>Predictions for Symptoms: "{{ symptoms_input }}"</h3>
+            <div class="result">
+                <p><strong>Random Forest Prediction:</strong> {{ predictions['rf_model_prediction'] }}</p>
+                <p><strong>Naive Bayes Prediction:</strong> {{ predictions['naive_bayes_prediction'] }}</p>
+                <p><strong>SVM Prediction:</strong> {{ predictions['svm_model_prediction'] }}</p>
+                <p><strong>Final Prediction (Most Frequent):</strong> {{ predictions['final_prediction'] }}</p>
+            </div>
+
+            <h3>Prediction Probabilities</h3>
+            <div class="charts">
+                <div class="chart-container">
+                    <h4>Random Forest</h4>
+                    <canvas id="rfChart" width="400" height="200"></canvas>
+                </div>
+                <div class="chart-container">
+                    <h4>Naive Bayes</h4>
+                    <canvas id="nbChart" width="400" height="200"></canvas>
+                </div>
+                <div class="chart-container">
+                    <h4>SVM</h4>
+                    <canvas id="svmChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+
+            <div class="guidance">
+                <h3>Precautions, Medications & Diet</h3>
+                <p class="disclaimer">
+                    Informational only—not a medical diagnosis. Please consult a qualified healthcare professional for advice.
+                </p>
+
+                <div class="guidance-section">
+                    <h4>Precautions</h4>
+                    <ul>
+                        {% for item in predictions['precautions'] %}
+                            <li>{{ item }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+
+                <div class="guidance-section">
+                    <h4>Medications (general examples)</h4>
+                    <ul>
+                        {% for item in predictions['medications'] %}
+                            <li>{{ item }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+
+                <div class="guidance-section">
+                    <h4>Diet Recommendations</h4>
+                    <ul>
+                        {% for item in predictions['diet_recommendations'] %}
+                            <li>{{ item }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+
+    <script>
+        {% if predictions %}
+        var rfProbabilities = {{ predictions['rf_probabilities'] | tojson }};
+        var nbProbabilities = {{ predictions['nb_probabilities'] | tojson }};
+        var svmProbabilities = {{ predictions['svm_probabilities'] | tojson }};
+
+        // Random Forest Chart
+        const rfCtx = document.getElementById('rfChart').getContext('2d');
+        const rfData = {
+            labels: rfProbabilities.map(item => item[0]),
+            datasets: [{
+                label: 'Probability',
+                data: rfProbabilities.map(item => item[1]),
+                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                borderColor: 'rgba(75, 192, 192, 1)',
+                borderWidth: 1
+            }]
+        };
+        new Chart(rfCtx, {
+            type: 'bar',
+            data: rfData,
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+        // Naive Bayes Chart
+        const nbCtx = document.getElementById('nbChart').getContext('2d');
+        const nbData = {
+            labels: nbProbabilities.map(item => item[0]),
+            datasets: [{
+                label: 'Probability',
+                data: nbProbabilities.map(item => item[1]),
+                backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                borderColor: 'rgba(255, 99, 132, 1)',
+                borderWidth: 1
+            }]
+        };
+        new Chart(nbCtx, {
+            type: 'bar',
+            data: nbData,
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+        // SVM Chart
+        const svmCtx = document.getElementById('svmChart').getContext('2d');
+        const svmData = {
+            labels: svmProbabilities.map(item => item[0]),
+            datasets: [{
+                label: 'Probability',
+                data: svmProbabilities.map(item => item[1]),
+                backgroundColor: 'rgba(255, 205, 86, 0.2)',
+                borderColor: 'rgba(255, 205, 86, 1)',
+                borderWidth: 1
+            }]
+        };
+        new Chart(svmCtx, {
+            type: 'bar',
+            data: svmData,
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+        {% endif %}
+    </script>
+</body>
+</html>
